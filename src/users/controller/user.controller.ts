@@ -1,5 +1,6 @@
 import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
+import { BaseDto } from 'src/common/base.dto';
 import {
   CreateUserDtoRequest,
   CreateUserDtoResponse,
@@ -15,7 +16,14 @@ export class UserController {
   async registerUser(@Res() res: Response, @Body() dto: CreateUserDtoRequest) {
     const user = await this.userService.create(dto);
 
-    res.status(HttpStatus.CREATED).json(new CreateUserDtoResponse(user));
+    res
+      .status(HttpStatus.CREATED)
+      .json(
+        new BaseDto(
+          'user registered successfully',
+          new CreateUserDtoResponse(user),
+        ),
+      );
   }
 
   @Post('/login') async login(
@@ -24,8 +32,12 @@ export class UserController {
   ) {
     const { accessToken, user } = await this.userService.login(dto);
 
-    res
-      .status(HttpStatus.OK)
-      .json({ accessToken, email: user.email, userId: user.id });
+    res.status(HttpStatus.OK).json(
+      new BaseDto('login successfully', {
+        accessToken,
+        email: user.email,
+        userId: user.id,
+      }),
+    );
   }
 }
