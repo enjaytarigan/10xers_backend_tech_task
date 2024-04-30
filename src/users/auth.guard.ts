@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -19,19 +20,22 @@ export class AuthGuard implements CanActivate {
   logger = new Logger(AuthGuard.name);
 
   async canActivate(context: ExecutionContext) {
+    const req = this.getRequest(context);
+    const token = this.getToken(req);
+
+    if (!token) {
+      throw new UnauthorizedException();
+    }
+
     try {
-      const req = this.getRequest(context);
-
-      const token = this.getToken(req);
-
       const user = await this.jwtService.verify(token);
 
       req['user'] = user;
-
-      return true;
     } catch (error) {
-      return false;
+      throw new UnauthorizedException();
     }
+
+    return true;
   }
 
   protected getRequest(context: ExecutionContext) {
@@ -42,7 +46,7 @@ export class AuthGuard implements CanActivate {
     const auth = req.headers['authorization'];
 
     if (!auth || Array.isArray(auth)) {
-      throw new Error('Invalid authorization header');
+      throw new UnauthorizedException();
     }
 
     // authorization => 'Bearer {token}'
