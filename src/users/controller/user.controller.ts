@@ -21,7 +21,6 @@ export class UserController {
   })
   async registerUser(@Res() res: Response, @Body() dto: CreateUserDtoRequest) {
     const user = await this.userService.create(dto);
-
     res
       .status(HttpStatus.CREATED)
       .json(

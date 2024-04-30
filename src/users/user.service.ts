@@ -5,9 +5,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PasswordHash } from './bcrypt';
 import { CreateUserDtoRequest, UserLoginRequest } from './dto/user.dto';
 import { UserEntity } from './entity/user.entity';
@@ -22,6 +21,8 @@ export class UserService {
     private passwordHash: PasswordHash,
 
     private jwtService: JWTService,
+
+    private dataSource: DataSource,
   ) {}
 
   async create(dto: CreateUserDtoRequest) {
@@ -41,7 +42,15 @@ export class UserService {
 
     user.password = await this.passwordHash.hash(dto.password);
 
-    await this.userRepository.insert(user);
+    const { identifiers } = await this.userRepository
+      .createQueryBuilder()
+      .insert()
+      .into(UserEntity)
+      .values(user)
+      .returning(['id'])
+      .execute();
+
+    user.id = identifiers[0].id;
 
     return user;
   }
