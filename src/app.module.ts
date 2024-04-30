@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import config from './config/config';
 import { dataSourceOptions } from './database/data-source';
 import { UserModule } from './users/user.module';
+import { ProductModule } from './products/product.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserModule } from './users/user.module';
       isGlobal: true,
     }),
     UserModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

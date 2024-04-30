@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { DataSource } from 'typeorm';
 import { UserEntity } from '../src/users/entity/user.entity';
 import Response from 'superagent/lib/node/response';
+import { ProductEntity } from '../src/products/entity/product.entity';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -19,6 +20,15 @@ describe('AppController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     dataSoruce = app.get(DataSource);
     await app.init();
+  });
+
+  afterAll(async () => {
+    await dataSoruce
+      .createQueryBuilder()
+      .delete()
+      .from(ProductEntity)
+      .execute();
+    await dataSoruce.createQueryBuilder().delete().from(UserEntity).execute();
   });
 
   it('/ (GET)', () => {
@@ -92,10 +102,6 @@ describe('AppController (e2e)', () => {
         });
       expect(response.statusCode).toBe(400);
     });
-
-    afterAll(async () => {
-      await dataSoruce.createQueryBuilder().delete().from(UserEntity).execute();
-    });
   });
 
   describe('POST /users/login', () => {
@@ -132,6 +138,150 @@ describe('AppController (e2e)', () => {
         .post('/users/login')
         .send({ email: 'random@email.com', password: 'randompasswword' })
         .expect(404);
+    });
+  });
+
+  describe('Manage Products', () => {
+    const adminUser = {
+      fullname: 'adminhandsome',
+      password: 'adminstrong',
+      email: 'admin@10xersbackend.com',
+      accessToken: '',
+    };
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .post('/users/register')
+        .send(adminUser);
+
+      await request(app.getHttpServer())
+        .post('/users/login')
+        .send({ email: adminUser.email, password: adminUser.password })
+        .then((res) => {
+          adminUser.accessToken = res.body.accessToken;
+        });
+    });
+
+    beforeEach(async () => {
+      await dataSoruce
+        .createQueryBuilder()
+        .delete()
+        .from(ProductEntity)
+        .execute();
+    });
+
+    describe('POST /products', () => {
+      it('should response 201 status code', async () => {
+        return request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.CREATED)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data.productId).toBeDefined();
+          });
+      });
+
+      it('should response 400 status code', async () => {
+        await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.CREATED);
+
+        await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.BAD_REQUEST);
+
+        await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Aww', // bad title
+            slug: 'aww-awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.BAD_REQUEST);
+
+        await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // duplcate slug
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.BAD_REQUEST);
+      });
+    });
+
+    describe('GET products/:productId', () => {
+      it('should response 200 status code', async () => {
+        const product = {
+          title: 'Awesome New Product',
+          slug: 'awesome-new-product', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 19.99,
+        };
+
+        const res = await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send(product)
+          .expect(HttpStatus.CREATED);
+
+        return request(app.getHttpServer())
+          .get(`/products/${res.body.data.productId}`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data.title).toEqual(product.title);
+            expect(res.body.data.price).toEqual(product.price);
+            expect(res.body.data.slug).toEqual(product.slug);
+            expect(res.body.data.description).toEqual(product.description);
+          });
+      });
+
+      it('should response 404 status code', async () => {
+        await request(app.getHttpServer())
+          .get(`/products/`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(404);
+
+        return request(app.getHttpServer())
+          .get(`/products/00000`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(404);
+      });
     });
   });
 });
