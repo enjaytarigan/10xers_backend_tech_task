@@ -22,13 +22,18 @@ import {
   ProductResponse,
 } from '../dto/product.dto';
 import { ProductService } from '../product.service';
+import { ApiTags, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
 
 @UseGuards(AuthGuard)
+@ApiTags('Manage Products')
 @Controller('/products')
 export class ProductController {
   constructor(private productService: ProductService) {}
 
   @Post()
+  @ApiCreatedResponse({
+    type: CreateProductResponse,
+  })
   async create(
     @Body() dto: CreateProductDto,
     @Req() req: IAuthRequest,
@@ -44,6 +49,9 @@ export class ProductController {
   }
 
   @Get('/:productId')
+  @ApiOkResponse({
+    type: ProductResponse,
+  })
   async getById(
     @Param(
       'productId',
@@ -68,6 +76,9 @@ export class ProductController {
   }
 
   @Put('/:productId')
+  @ApiOkResponse({
+    type: ProductResponse,
+  })
   async editById(
     @Param(
       'productId',
@@ -90,6 +101,7 @@ export class ProductController {
   }
 
   @Delete('/:productId')
+  @ApiOkResponse({})
   async deleteById(
     @Param(
       'productId',

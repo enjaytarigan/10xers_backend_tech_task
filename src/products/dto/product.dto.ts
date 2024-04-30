@@ -3,14 +3,14 @@ import {
   IsNumber,
   IsPositive,
   IsString,
-  isURL,
   Length,
   Matches,
 } from 'class-validator';
 import { ProductEntity } from '../entity/product.entity';
-import { PartialType } from '@nestjs/mapped-types';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateProductDto {
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @Length(5, 255, {
@@ -18,6 +18,7 @@ export class CreateProductDto {
   })
   title: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @Length(3, 255, { message: 'slug must be between 3 and 255 characters' })
@@ -27,10 +28,12 @@ export class CreateProductDto {
   })
   slug: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   description: string;
 
+  @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
   @IsPositive({ message: 'price must be a positive number' })
@@ -38,6 +41,7 @@ export class CreateProductDto {
 }
 
 export class CreateProductResponse {
+  @ApiProperty()
   productId: number;
 
   constructor(product: ProductEntity) {
@@ -48,16 +52,22 @@ export class CreateProductResponse {
 export class EditProductDto extends PartialType(CreateProductDto) {}
 
 export class ProductResponse {
+  @ApiProperty()
   title: string;
 
+  @ApiProperty()
   slug: string;
 
+  @ApiProperty()
   description: string;
 
+  @ApiProperty()
   price: number;
 
+  @ApiProperty()
   createdAt: Date;
 
+  @ApiProperty()
   createdBy: number;
 
   constructor(product: ProductEntity) {
