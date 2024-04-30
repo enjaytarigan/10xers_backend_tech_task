@@ -19,3 +19,7 @@ I have not prepared good testing environment for this project, so running the e2
 ```
 
 To run end to end testing, please execute `npm run test:e2e` command.
+
+### Postman collection
+
+I have included a Postman collection to make API testing easier.
