@@ -8,6 +8,7 @@ import {
   Matches,
 } from 'class-validator';
 import { ProductEntity } from '../entity/product.entity';
+import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateProductDto {
   @IsString()
@@ -43,6 +44,8 @@ export class CreateProductResponse {
     this.productId = product.id;
   }
 }
+
+export class EditProductDto extends PartialType(CreateProductDto) {}
 
 export class ProductResponse {
   title: string;

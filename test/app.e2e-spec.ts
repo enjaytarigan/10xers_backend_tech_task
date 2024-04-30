@@ -241,7 +241,7 @@ describe('AppController (e2e)', () => {
       });
     });
 
-    describe('GET products/:productId', () => {
+    describe('GET /products/:productId', () => {
       it('should response 200 status code', async () => {
         const product = {
           title: 'Awesome New Product',
@@ -281,6 +281,150 @@ describe('AppController (e2e)', () => {
           .get(`/products/00000`)
           .set('authorization', `Bearer ${adminUser.accessToken}`)
           .expect(404);
+      });
+    });
+
+    describe('PUT products/:productId', () => {
+      it('should response 200 status code', async () => {
+        const res = await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.CREATED);
+
+        const editPayload = {
+          title: 'Awesome New Product-Edited',
+          slug: 'awesome-new-product-edited', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 29.99,
+        };
+
+        return request(app.getHttpServer())
+          .put(`/products/${res.body.data.productId}`)
+          .send(editPayload)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data.title).toEqual(editPayload.title);
+            expect(res.body.data.price).toEqual(editPayload.price);
+            expect(res.body.data.slug).toEqual(editPayload.slug);
+            expect(res.body.data.description).toEqual(editPayload.description);
+          });
+      });
+
+      it('should response 400 status code with "slug already used" message', async () => {
+        const product1 = {
+          title: 'Awesome New Product',
+          slug: 'awesome-new-product-unique', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 19.99,
+        };
+
+        await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send(product1)
+          .expect(HttpStatus.CREATED);
+
+        const product2 = {
+          title: 'Awesome New Product-2',
+          slug: 'awesome-new-product-2', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 19.99,
+        };
+
+        const res = await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send(product2)
+          .expect(HttpStatus.CREATED);
+
+        const editPayload = {
+          title: 'Awesome New Product',
+          slug: 'awesome-new-product-unique', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 19.99,
+        };
+
+        return request(app.getHttpServer())
+          .put(`/products/${res.body.data.productId}`)
+          .send(editPayload)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(HttpStatus.BAD_REQUEST)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.message).toEqual('slug already used');
+          });
+      });
+
+      it('should response 404 status code', () => {
+        const editPayload = {
+          title: 'Awesome New Product-Edited',
+          slug: 'awesome-new-product-edited', // Generated based on title
+          description:
+            "This is a fantastic product that you'll absolutely love!",
+          price: 29.99,
+        };
+
+        return request(app.getHttpServer())
+          .put(`/products/000`)
+          .send(editPayload)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(HttpStatus.NOT_FOUND);
+      });
+    });
+
+    describe('DELETE products/:productId', () => {
+      it('should response 403 status code', () => {
+        return request(app.getHttpServer())
+          .delete(`/products/25`)
+          .expect(HttpStatus.FORBIDDEN);
+      });
+
+      it('should response 200 status code with "product deleted successfully"', async () => {
+        const res = await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.CREATED);
+
+        return request(app.getHttpServer())
+          .delete(`/products/${res.body.data.productId}`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.message).toEqual('product deleted successfully');
+          });
+      });
+
+      it('should response 404 status code with "product not found"', async () => {
+        return request(app.getHttpServer())
+          .delete(`/products/9999`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(HttpStatus.NOT_FOUND)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.message).toEqual('product not found');
+          });
       });
     });
   });

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { CreateProductDto } from './dto/product.dto';
+import { CreateProductDto, EditProductDto } from './dto/product.dto';
 import { ProductEntity } from './entity/product.entity';
 
 @Injectable()
@@ -26,13 +26,7 @@ export class ProductService {
       createdBy: userId,
     });
 
-    const productBySlug = await this.productRepository.findOneBy({
-      slug: dto.slug,
-    });
-
-    if (productBySlug != null) {
-      throw new BadRequestException('slug already used');
-    }
+    await this.validateSlug(dto.slug);
 
     const { identifiers } = await this.dataSource
       .createQueryBuilder()
@@ -68,5 +62,44 @@ export class ProductService {
     }
 
     return product;
+  }
+
+  async editById(productId: number, dto: EditProductDto) {
+    const product = await this.getById(productId);
+
+    if (product.slug !== dto.slug) {
+      await this.validateSlug(dto.slug);
+    }
+
+    product.update(dto);
+
+    await this.productRepository.update(
+      { id: productId },
+      {
+        title: product.title,
+        description: product.description,
+        slug: product.slug,
+        price: product.price,
+      },
+    );
+
+    return product;
+  }
+
+  async deleteById(productId: number) {
+    await this.getById(productId);
+
+    await this.productRepository.delete({ id: productId });
+  }
+
+  // Slug is valid when it isn't used yet.
+  private async validateSlug(slug: string) {
+    const productBySlug = await this.productRepository.findOneBy({
+      slug: slug,
+    });
+
+    if (productBySlug != null) {
+      throw new BadRequestException('slug already used');
+    }
   }
 }

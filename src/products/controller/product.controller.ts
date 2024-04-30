@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Req,
   Res,
   UseGuards,
@@ -16,6 +18,7 @@ import { AuthGuard, IAuthRequest } from '../../users/auth.guard';
 import {
   CreateProductDto,
   CreateProductResponse,
+  EditProductDto,
   ProductResponse,
 } from '../dto/product.dto';
 import { ProductService } from '../product.service';
@@ -60,6 +63,46 @@ export class ProductController {
       'success get product',
       new ProductResponse(product),
     );
+
+    res.status(HttpStatus.OK).json(resBody);
+  }
+
+  @Put('/:productId')
+  async editById(
+    @Param(
+      'productId',
+      new ParseIntPipe({
+        errorHttpStatusCode: HttpStatus.NOT_FOUND,
+      }),
+    )
+    productId: number,
+    @Body() dto: EditProductDto,
+    @Res() res: Response,
+  ) {
+    const product = await this.productService.editById(productId, dto);
+
+    const resBody = new BaseDto(
+      'product updated successfully',
+      new ProductResponse(product),
+    );
+
+    res.status(HttpStatus.OK).json(resBody);
+  }
+
+  @Delete('/:productId')
+  async deleteById(
+    @Param(
+      'productId',
+      new ParseIntPipe({
+        errorHttpStatusCode: HttpStatus.NOT_FOUND,
+      }),
+    )
+    productId: number,
+    @Res() res: Response,
+  ) {
+    await this.productService.deleteById(productId);
+
+    const resBody = new BaseDto('product deleted successfully', null);
 
     res.status(HttpStatus.OK).json(resBody);
   }

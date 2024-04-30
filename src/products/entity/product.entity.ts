@@ -43,4 +43,12 @@ export class ProductEntity {
     foreignKeyConstraintName: 'fk_created_by',
   })
   userCreatedBy: UserEntity;
+
+  update(product: Partial<ProductEntity>) {
+    for (const property in product) {
+      if (product[property] != null) {
+        this[property] = product[property];
+      }
+    }
+  }
 }
