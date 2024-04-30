@@ -2,13 +2,13 @@
 
 ### Pre-Setup
 
-Before running this app locally, you have to execute several commands.
+Before running this app locally, please execute these commands:
 
 1. npm install
 2. docker compose up -d
-3. npm run typeorm run:migrations
+3. npm run typeorm:run-migrations
 
-### Running the application locally
+### Running the application
 
 1. npm run start:dev
 
