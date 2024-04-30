@@ -394,10 +394,10 @@ describe('AppController (e2e)', () => {
     });
 
     describe('DELETE /products/:productId', () => {
-      it('should response 403 status code', () => {
+      it('should response 401 status code', () => {
         return request(app.getHttpServer())
           .delete(`/products/25`)
-          .expect(HttpStatus.FORBIDDEN);
+          .expect(HttpStatus.UNAUTHORIZED);
       });
 
       it('should response 200 status code with "product deleted successfully"', async () => {
@@ -449,7 +449,7 @@ describe('AppController (e2e)', () => {
       });
 
       it('should response 200 status code and return searched product', async () => {
-        const res = await request(app.getHttpServer())
+        await request(app.getHttpServer())
           .post('/products')
           .set('authorization', `Bearer ${adminUser.accessToken}`)
           .send({
