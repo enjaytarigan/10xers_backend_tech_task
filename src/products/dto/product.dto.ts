@@ -1,6 +1,7 @@
 import {
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   Length,
@@ -78,4 +79,17 @@ export class ProductResponse {
     this.createdAt = product.createdAt;
     this.createdBy = product.createdBy;
   }
+}
+
+export class GetProductDtoRequest {
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  search: string;
+
+  @ApiProperty()
+  size: number;
+
+  @ApiProperty()
+  page: number;
 }

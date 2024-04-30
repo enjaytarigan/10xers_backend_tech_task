@@ -7,28 +7,35 @@ import { UserEntity } from '../src/users/entity/user.entity';
 import Response from 'superagent/lib/node/response';
 import { ProductEntity } from '../src/products/entity/product.entity';
 
+async function cleanupDatabase(dataSource: DataSource) {
+  await dataSource.createQueryBuilder().delete().from(UserEntity).execute();
+  await dataSource.createQueryBuilder().delete().from(ProductEntity).execute();
+}
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-  let dataSoruce: DataSource;
+  let dataSource: DataSource;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
-    dataSoruce = app.get(DataSource);
+    dataSource = app.get(DataSource);
+    cleanupDatabase(dataSource);
     await app.init();
   });
 
   afterAll(async () => {
-    await dataSoruce
+    await dataSource
       .createQueryBuilder()
       .delete()
       .from(ProductEntity)
       .execute();
-    await dataSoruce.createQueryBuilder().delete().from(UserEntity).execute();
+    await dataSource.createQueryBuilder().delete().from(UserEntity).execute();
+    await app.close();
   });
 
   it('/ (GET)', () => {
@@ -40,7 +47,7 @@ describe('AppController (e2e)', () => {
 
   describe('POST /users/register', () => {
     beforeEach(async () => {
-      await dataSoruce.createQueryBuilder().delete().from(UserEntity).execute();
+      await dataSource.createQueryBuilder().delete().from(UserEntity).execute();
     });
 
     it('should response 201 status code', () => {
@@ -112,7 +119,7 @@ describe('AppController (e2e)', () => {
     };
 
     beforeEach(async () => {
-      await dataSoruce.createQueryBuilder().delete().from(UserEntity).execute();
+      await dataSource.createQueryBuilder().delete().from(UserEntity).execute();
 
       await request(app.getHttpServer())
         .post('/users/register')
@@ -158,12 +165,12 @@ describe('AppController (e2e)', () => {
         .post('/users/login')
         .send({ email: adminUser.email, password: adminUser.password })
         .then((res) => {
-          adminUser.accessToken = res.body.accessToken;
+          adminUser.accessToken = res.body.data.accessToken;
         });
     });
 
     beforeEach(async () => {
-      await dataSoruce
+      await dataSource
         .createQueryBuilder()
         .delete()
         .from(ProductEntity)
@@ -273,7 +280,7 @@ describe('AppController (e2e)', () => {
 
       it('should response 404 status code', async () => {
         await request(app.getHttpServer())
-          .get(`/products/`)
+          .get(`/products/invalidid`)
           .set('authorization', `Bearer ${adminUser.accessToken}`)
           .expect(404);
 
@@ -386,7 +393,7 @@ describe('AppController (e2e)', () => {
       });
     });
 
-    describe('DELETE products/:productId', () => {
+    describe('DELETE /products/:productId', () => {
       it('should response 403 status code', () => {
         return request(app.getHttpServer())
           .delete(`/products/25`)
@@ -424,6 +431,44 @@ describe('AppController (e2e)', () => {
           .then((res) => {
             expect(res.body.message).toBeDefined();
             expect(res.body.message).toEqual('product not found');
+          });
+      });
+    });
+
+    describe('GET /products', () => {
+      it('should response 200 status code', () => {
+        return request(app.getHttpServer())
+          .get(`/products`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data).toHaveLength(0);
+          });
+      });
+
+      it('should response 200 status code and return searched product', async () => {
+        const res = await request(app.getHttpServer())
+          .post('/products')
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .send({
+            title: 'Awesome New Product',
+            slug: 'awesome-new-product', // Generated based on title
+            description:
+              "This is a fantastic product that you'll absolutely love!",
+            price: 19.99,
+          })
+          .expect(HttpStatus.CREATED);
+
+        return request(app.getHttpServer())
+          .get(`/products?search=awesome`)
+          .set('authorization', `Bearer ${adminUser.accessToken}`)
+          .expect(200)
+          .then((res) => {
+            expect(res.body.message).toBeDefined();
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data).toHaveLength(1);
           });
       });
     });

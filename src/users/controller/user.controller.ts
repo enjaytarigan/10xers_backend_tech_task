@@ -1,7 +1,7 @@
 import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { ApiCreatedResponse, ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { Response } from 'express';
-import { BaseDto } from 'src/common/base.dto';
+import { BaseDto } from '../../../src/common/dto/base.dto';
 import {
   CreateUserDtoRequest,
   CreateUserDtoResponse,

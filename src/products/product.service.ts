@@ -4,8 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PaginationService } from '../../src/common/pagination.service';
 import { DataSource, Repository } from 'typeorm';
-import { CreateProductDto, EditProductDto } from './dto/product.dto';
+import {
+  CreateProductDto,
+  EditProductDto,
+  GetProductDtoRequest,
+} from './dto/product.dto';
 import { ProductEntity } from './entity/product.entity';
 
 @Injectable()
@@ -90,6 +95,32 @@ export class ProductService {
     await this.getById(productId);
 
     await this.productRepository.delete({ id: productId });
+  }
+
+  async getProducts(query: GetProductDtoRequest) {
+    const { limit, offset } = PaginationService.getPagination(
+      query.page,
+      query.size,
+    );
+    const qb = this.productRepository.createQueryBuilder('product');
+
+    if (query.search != null && query.search.length > 0) {
+      qb.where('product.title ILIKE :search', { search: `%${query.search}%` });
+    }
+
+    const [products, count] = await qb
+      .take(limit)
+      .skip(offset)
+      .getManyAndCount();
+
+    return {
+      products,
+      ...PaginationService.getPaginationMetadata({
+        totalData: count,
+        page: query.size,
+        limit,
+      }),
+    };
   }
 
   // Slug is valid when it isn't used yet.

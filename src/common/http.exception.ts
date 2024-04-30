@@ -6,7 +6,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { BaseDto } from './base.dto';
+import { BaseDto } from './dto/base.dto';
 
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
@@ -16,6 +16,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       this.handleHttpException(exception, response);
     } else {
+      console.log(exception);
       this.handleHttpException(new InternalServerErrorException(), response);
     }
   }

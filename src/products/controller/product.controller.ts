@@ -8,21 +8,24 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { BaseDto } from '../../common/base.dto';
+import { BaseDto } from '../../common/dto/base.dto';
 import { AuthGuard, IAuthRequest } from '../../users/auth.guard';
 import {
   CreateProductDto,
   CreateProductResponse,
   EditProductDto,
+  GetProductDtoRequest,
   ProductResponse,
 } from '../dto/product.dto';
 import { ProductService } from '../product.service';
 import { ApiTags, ApiCreatedResponse, ApiOkResponse } from '@nestjs/swagger';
+import { BasePaginationDto } from '../../../src/common/dto/pagination.dto';
 
 @UseGuards(AuthGuard)
 @ApiTags('Manage Products')
@@ -57,9 +60,6 @@ export class ProductController {
       'productId',
       new ParseIntPipe({
         errorHttpStatusCode: HttpStatus.NOT_FOUND,
-        exceptionFactory(error) {
-          return 'product not found';
-        },
       }),
     )
     productId: number,
@@ -117,5 +117,19 @@ export class ProductController {
     const resBody = new BaseDto('product deleted successfully', null);
 
     res.status(HttpStatus.OK).json(resBody);
+  }
+
+  @Get()
+  @ApiOkResponse({ type: ProductResponse, isArray: true })
+  async getProducts(@Query() query: GetProductDtoRequest) {
+    const { products, totalPages, currentPage } =
+      await this.productService.getProducts(query);
+
+    const resBodyData = products.map((product) => new ProductResponse(product));
+
+    return new BasePaginationDto('success get products', resBodyData, {
+      totalPages,
+      currentPage,
+    });
   }
 }
