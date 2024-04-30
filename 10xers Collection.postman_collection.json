@@ -1,0 +1,357 @@
+{
+	"info": {
+		"_postman_id": "abf3665e-9bc7-4941-8cf8-facdf3cbbd2c",
+		"name": "10xers Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17210244"
+	},
+	"item": [
+		{
+			"name": "users",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"function generateRandomEmail() {",
+									"  // Define character sets for username and domain",
+									"  const lowercaseLetters = \"abcdefghijklmnopqrstuvwxyz\";",
+									"  const numbers = \"0123456789\";",
+									"  const allChars = lowercaseLetters + numbers",
+									"",
+									"  // Generate random username (8-12 characters)",
+									"  let usernameLength = Math.floor(Math.random() * (12 - 8 + 1)) + 8;",
+									"  let username = \"\";",
+									"  for (let i = 0; i < usernameLength; i++) {",
+									"    username += allChars.charAt(Math.floor(Math.random() * allChars.length));",
+									"  }",
+									"",
+									"  // Generate random domain (5-8 characters)",
+									"  const domainLength = Math.floor(Math.random() * (8 - 5 + 1)) + 5;",
+									"  let domain = \"\";",
+									"  for (let i = 0; i < domainLength; i++) {",
+									"    domain += lowercaseLetters.charAt(Math.floor(Math.random() * lowercaseLetters.length));",
+									"  }",
+									"",
+									"  // Combine username and domain with \"@\" symbol",
+									"  const email = username + \"@\" + domain + \".com\";",
+									"  return email;",
+									"}",
+									"",
+									"pm.collectionVariables.set('USER_EMAIL', generateRandomEmail())"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullname\": \"{{USER_FULLNAME}}\",\n  \"email\": \"{{USER_EMAIL}}\",\n  \"password\": \"{{USER_PASSWORD}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URL}}/users/register",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json()",
+									"pm.collectionVariables.set('ACCESS_TOKEN', response.data.accessToken)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{USER_EMAIL}}\",\n  \"password\": \"{{USER_PASSWORD}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URL}}/users/login",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "products",
+			"item": [
+				{
+					"name": "Create New Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json()",
+									"pm.collectionVariables.set('CREATED_PRODUCT_ID', response.data.productId)"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Awesome New Product\",\n    \"slug\": \"awesome-new-product\",\n    \"description\": \"This is a fantastic product that you'll absolutely love!\",\n    \"price\": 19.99\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URL}}/products",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/products/{{CREATED_PRODUCT_ID}}",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"products",
+								"{{CREATED_PRODUCT_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Awesome New Product-edited\",\n    \"slug\": \"awesome-new-product-edited\",\n    \"description\": \"This is a fantastic product that you'll absolutely love!\",\n    \"price\": 19.35\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URL}}/products/{{CREATED_PRODUCT_ID}}",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"products",
+								"{{CREATED_PRODUCT_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/products/{{CREATED_PRODUCT_ID}}",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"products",
+								"{{CREATED_PRODUCT_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List Products",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URL}}/products",
+							"host": [
+								"{{API_URL}}"
+							],
+							"path": [
+								"products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "API_URL",
+			"value": "localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "ACCESS_TOKEN",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "USER_EMAIL",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "USER_PASSWORD",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "USER_FULLNAME",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "CREATED_PRODUCT_ID",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
